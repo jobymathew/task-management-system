@@ -9,6 +9,7 @@ import {RestApplication} from '@loopback/rest';
 import {ServiceMixin} from '@loopback/service-proxy';
 import path from 'path';
 import {MySequence} from './sequence';
+import { RedisServiceProvider } from './services/redis.service';
 
 export {ApplicationConfig};
 
@@ -40,5 +41,8 @@ export class TaskManagementSystemApplication extends BootMixin(
         nested: true,
       },
     };
+
+    // redis
+    this.bind('services.RedisService').toProvider(RedisServiceProvider);
   }
 }

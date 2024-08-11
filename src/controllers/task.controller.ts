@@ -19,11 +19,15 @@ import {
 } from '@loopback/rest';
 import {Task} from '../models';
 import {TaskRepository} from '../repositories';
+import {inject} from '@loopback/core';
+import {RedisService} from '../services/redis.service';
 
 export class TaskController {
   constructor(
     @repository(TaskRepository)
     public taskRepository : TaskRepository,
+    @inject('services.RedisService')
+    public redisService: RedisService,
   ) {}
 
   @post('/tasks')
@@ -44,7 +48,10 @@ export class TaskController {
     })
     task: Omit<Task, 'id'>,
   ): Promise<Task> {
-    return this.taskRepository.create(task);
+    const createdTask = await this.taskRepository.create(task);
+    // After creating a new task, you might want to cache it
+    await this.redisService.setTask(createdTask);
+    return createdTask;
   }
 
   @get('/tasks/count')
@@ -74,6 +81,8 @@ export class TaskController {
     @param.filter(Task) filter?: Filter<Task>,
   ): Promise<Task[]> {
     return this.taskRepository.find(filter);
+    // Note: Caching for this method would be more complex as it involves filters
+    // You might want to implement a more sophisticated caching strategy for this
   }
 
   @patch('/tasks')
@@ -93,6 +102,7 @@ export class TaskController {
     @param.where(Task) where?: Where<Task>,
   ): Promise<Count> {
     return this.taskRepository.updateAll(task, where);
+    // After updating, you might want to invalidate or update relevant cache entries
   }
 
   @get('/tasks/{id}')
@@ -108,7 +118,15 @@ export class TaskController {
     @param.path.number('id') id: number,
     @param.filter(Task, {exclude: 'where'}) filter?: FilterExcludingWhere<Task>
   ): Promise<Task> {
-    return this.taskRepository.findById(id, filter);
+    // Try to get the task from Redis first
+    let task = await this.redisService.getTask(id);
+    if (!task) {
+      // If not in Redis, get from database
+      task = await this.taskRepository.findById(id, filter);
+      // Then cache it in Redis for future requests
+      await this.redisService.setTask(task);
+    }
+    return task;
   }
 
   @patch('/tasks/{id}')
@@ -127,6 +145,9 @@ export class TaskController {
     task: Task,
   ): Promise<void> {
     await this.taskRepository.updateById(id, task);
+    // After updating, update the cache
+    const updatedTask = await this.taskRepository.findById(id);
+    await this.redisService.setTask(updatedTask);
   }
 
   @put('/tasks/{id}')
@@ -138,6 +159,8 @@ export class TaskController {
     @requestBody() task: Task,
   ): Promise<void> {
     await this.taskRepository.replaceById(id, task);
+    // After replacing, update the cache
+    await this.redisService.setTask(task);
   }
 
   @del('/tasks/{id}')
@@ -146,5 +169,8 @@ export class TaskController {
   })
   async deleteById(@param.path.number('id') id: number): Promise<void> {
     await this.taskRepository.deleteById(id);
+    // After deleting, remove from cache
+    // You'll need to add a method to RedisService to delete a task
+    // await this.redisService.deleteTask(id);
   }
 }
