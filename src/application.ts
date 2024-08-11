@@ -10,6 +10,17 @@ import {ServiceMixin} from '@loopback/service-proxy';
 import path from 'path';
 import {MySequence} from './sequence';
 import { RedisServiceProvider } from './services/redis.service';
+import cors from 'cors';
+
+// Authentication Components
+import { AuthenticationComponent } from '@loopback/authentication';
+import {
+  JWTAuthenticationComponent,
+  UserServiceBindings,
+} from '@loopback/authentication-jwt';
+import { DbDataSource } from './datasources';
+import { RateLimiterMemory } from 'rate-limiter-flexible';
+
 
 export {ApplicationConfig};
 
@@ -42,7 +53,41 @@ export class TaskManagementSystemApplication extends BootMixin(
       },
     };
 
+    // Set up CORS options
+    this.configure('rest').to({
+      cors: {
+        origin: 'http://localhost:3000',
+        credentials: true,
+      },
+    });
+
+    // Authenticaiton omponent
+    this.component(AuthenticationComponent);
+    this.component(JWTAuthenticationComponent);
+
+    this.dataSource(DbDataSource, UserServiceBindings.DATASOURCE_NAME);
+
     // redis
     this.bind('services.RedisService').toProvider(RedisServiceProvider);
+
+    // rate limiter
+    const rateLimiter = new RateLimiterMemory({
+      points: 10, // Number of points
+      duration: 1, // Per second
+    });
+
+
+    // FIX THIS AT 2'0 CLOCK
+    
+    // this.middleware((ctx, next) => {
+    //   return rateLimiter.consume(ctx.request.ip)
+    //     .then(() => next())
+    //     .catch(() => {
+    //       ctx.response.status(429).send('Too Many Requests');
+    //     });
+    // });
   }
+
+  
+
 }

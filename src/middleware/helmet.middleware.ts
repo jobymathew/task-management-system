@@ -1,9 +1,7 @@
-// using middelwares here helmet
-
 import {MiddlewareSequence, RequestContext} from '@loopback/rest';
 import helmet from 'helmet';
 
-export class MySequence extends MiddlewareSequence {
+export class MyMiddlewareSequence extends MiddlewareSequence {
   async handle(context: RequestContext) {
     // Apply Helmet middleware
     await new Promise<void>((resolve, reject) => {
@@ -13,7 +11,7 @@ export class MySequence extends MiddlewareSequence {
       });
     });
 
-    // Continue with the rest of your sequence
+    // Continue with the default sequence
     await super.handle(context);
   }
 }
