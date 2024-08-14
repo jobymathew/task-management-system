@@ -36,17 +36,17 @@ export class TaskManagementSystemApplication extends BootMixin(
     // Set up default home page
     this.static('/', path.join(__dirname, '../public'));
 
-    // Customize @loopback/rest-explorer configuration here
+    // Customize @loopback/rest-explorer configuration 
     this.configure(RestExplorerBindings.COMPONENT).to({
       path: '/explorer',
     });
     this.component(RestExplorerComponent);
 
     this.projectRoot = __dirname;
-    // Customize @loopback/boot Booter Conventions here
+    // Customize @loopback/boot Booter Conventions 
     this.bootOptions = {
       controllers: {
-        // Customize ControllerBooter Conventions here
+        // Customize ControllerBooter Conventions 
         dirs: ['controllers'],
         extensions: ['.controller.js'],
         nested: true,
@@ -56,7 +56,7 @@ export class TaskManagementSystemApplication extends BootMixin(
     // Set up CORS options
     this.configure('rest').to({
       cors: {
-        origin: 'http://localhost:3000',
+        origin: 'http://localhost:8080',
         credentials: true,
       },
     });

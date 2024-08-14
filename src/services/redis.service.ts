@@ -31,7 +31,6 @@ export class RedisService {
     await this.client.set(`task:${task.id}`, JSON.stringify(task));
   }
 
-  // Add a method to delete a task from cache
   async deleteTask(id: number): Promise<void> {
     console.log('Deleting task from redis');
     await this.client.del(`task:${id}`);
